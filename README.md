@@ -1,202 +1,125 @@
 # Solana Testnet Faucet
 
-A self-hosted faucet for distributing Solana testnet tokens with rate limiting, recaptcha protection, and claim history tracking.
+A simple faucet for distributing testnet SOL to developers. Built with Go and Vue.js.
 
 ## Features
 
-- Request testnet SOL with a simple user interface
-- IP and wallet-based rate limiting (once per day per wallet)
-- reCAPTCHA protection against bots
+- Request testnet SOL with a simple web interface
+- Rate limiting and cooldown periods to prevent abuse
+- Cloudflare Turnstile protection against bots
 - Transaction history tracking
-- Multiple deployment options (local, Nginx, or Cloudflare Tunnel)
-
-## Tech Stack
-
-- **Backend**: Golang
-- **Frontend**: Vue 3 with Vite and Tailwind CSS 3
-- **Database**: SQLite
-- **Deployment**: Docker & Docker Compose with multiple configuration options
+- Real-time faucet balance display
+- Dark mode UI with modern design
 
 ## Prerequisites
 
+- Go 1.21 or later
+- Node.js 18 or later
 - Docker and Docker Compose
-- A Solana wallet with testnet SOL (for funding the faucet)
-- reCAPTCHA v2 site and secret keys (optional)
-- Cloudflare account for Tunnel (optional for production deployment)
+- A Solana wallet with testnet SOL (for the faucet)
 
-## Installation
+## Environment Variables
+
+### Backend
+
+```env
+# Server Configuration
+FAUCET_SERVER_ADDRESS=0.0.0.0
+FAUCET_SERVER_PORT=8080
+
+# Database Configuration
+FAUCET_DB_PATH=/app/data/faucet.db
+
+# Solana Configuration
+FAUCET_SOLANA_RPC_URL=https://api.testnet.solana.com
+FAUCET_WALLET_PATH=/app/data/wallet.json
+FAUCET_AMOUNT_PER_REQUEST=0.1
+FAUCET_NETWORK_TYPE=testnet
+FAUCET_TRANSACTION_TIMEOUT=30
+
+# Security Configuration
+FAUCET_TURNSTILE_SECRET=your-turnstile-secret-key
+FAUCET_TURNSTILE_SITE=your-turnstile-site-key
+FAUCET_RATE_LIMIT_REQUESTS=5
+FAUCET_RATE_LIMIT_DURATION=60
+FAUCET_CLAIM_COOLDOWN=86400  # 24 hours in seconds
+
+# CORS Configuration
+FAUCET_CORS_ALLOWED_ORIGINS=http://localhost:3000,https://faucet.solana.com
+```
+
+### Frontend
+
+```env
+# API Configuration
+VITE_API_BASE_URL=http://localhost:8080  # Development
+VITE_API_BASE_URL=https://api-sol-faucet.maestroi.cc  # Production
+```
+
+## Development Setup
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/solana-faucet.git
+   git clone https://github.com/maestroi/solana-faucet.git
    cd solana-faucet
    ```
 
-2. Set up your Solana wallet:
+2. Set up the Solana wallet:
    ```bash
-   # Create a new wallet.json file or copy an existing one
-   # Format should be:
-   # {
-   #   "privateKey": "base64_encoded_private_key",
-   #   "publicKey": "your_public_key"
-   # }
+   # Create a new wallet
+   solana-keygen new -o wallet.json --outfile wallet.json
+   
+   # Get the public key
+   solana-keygen pubkey wallet.json
+   
+   # Request testnet SOL for the faucet wallet
+   solana airdrop 10 <YOUR_WALLET_PUBKEY> --url https://api.testnet.solana.com
    ```
 
-3. Configure the application in `config.json` or use environment variables.
-
-4. Create a `.env` file based on the provided `.env.example`:
+3. Set up environment variables:
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
-## Deployment Options
-
-The project includes three Docker Compose configurations for different deployment scenarios, all conveniently accessible via the Makefile:
-
-### Quick Start with Makefile
-
-```bash
-# Show all available commands
-make help
-
-# Run local development setup
-make local
-
-# Run development setup with Nginx
-make dev
-
-# Run production setup with Cloudflare Tunnel
-make prod
-
-# Stop all containers
-make down
-
-# Remove all containers, networks, and volumes
-make clean
-```
-
-### 1. Local Development (docker-compose.local.yml)
-
-Simplest setup with direct port exposure for local development:
-
-```bash
-make local
-```
-or
-```bash
-docker-compose -f docker-compose.local.yml up -d
-```
-
-Access:
-- Frontend: http://localhost:80
-- Backend API: http://localhost:8080
-
-### 2. Nginx Proxy (docker-compose.yml)
-
-Uses Nginx as a reverse proxy with optional SSL support for testing or simple production environments:
-
-```bash
-make dev
-```
-or
-```bash
-docker-compose up -d
-```
-
-Access:
-- Frontend: http://localhost:80 (or https://localhost:443 if SSL is configured)
-- Backend API: Proxied through the same domain via paths
-
-To configure SSL:
-1. Place your SSL certificates in the `nginx/certs` directory
-2. Uncomment the HTTPS server section in `nginx/conf.d/default.conf`
-
-### 3. Cloudflare Tunnel (docker-compose.prod.yml)
-
-Secure production deployment using Cloudflare Tunnel:
-
-```bash
-make prod
-```
-or
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-Access:
-- Via your configured domain(s) in Cloudflare Dashboard
-
-## Cloudflare Tunnel Setup
-
-Cloudflare Tunnel provides several advantages over traditional port forwarding or direct internet exposure:
-
-1. **No Public IP or Port Forwarding Required**: Eliminates the need to expose ports to the internet
-2. **TLS Encryption**: Automatic HTTPS with Cloudflare-managed certificates
-3. **DDoS Protection**: Built-in Cloudflare protection against attacks
-4. **Access Controls**: Can be integrated with Cloudflare Access for authentication
-5. **DNS Management**: Automatic DNS record management
-
-### Tunnel Setup Steps
-
-1. Install the Cloudflare CLI locally:
+4. Start the development environment:
    ```bash
-   # On Linux
-   curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-   sudo dpkg -i cloudflared.deb
-   
-   # Or with Docker
-   docker pull cloudflare/cloudflared:latest
+   docker-compose up -d
    ```
 
-2. Authenticate with Cloudflare:
+5. Access the faucet at http://localhost:3000
+
+## Production Deployment
+
+1. Set up your production environment variables:
    ```bash
-   cloudflared login
+   cp .env.example .env.prod
+   # Edit .env.prod with your production configuration
    ```
 
-3. Create a tunnel:
+2. Build and deploy using Docker Compose:
    ```bash
-   cloudflared tunnel create solana-faucet
+   docker-compose -f docker-compose.prod.yml up -d
    ```
 
-4. Get your tunnel token and add it to your `.env` file:
-   ```
-   CLOUDFLARE_TUNNEL_TOKEN=your-tunnel-token
-   ```
-
-5. Configure DNS records in the Cloudflare dashboard to point to your tunnel
-
-6. Configure your tunnel:
-   - Option 1: Using Cloudflare Zero Trust dashboard (Recommended)
-     - Configure public hostnames in the Cloudflare dashboard for your frontend and API
-
-   - Option 2: Using config file
-     - Copy the example config file: `cp cloudflared/config.yml.example cloudflared/config.yml`
-     - Edit with your specific tunnel ID and domain names
-
-For more detailed instructions, refer to the [Cloudflare Tunnel documentation](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/).
-
-## Environment Variables
-
-You can configure the application using environment variables in the `.env` file:
-
-- `FAUCET_SERVER_ADDRESS`: Server address (default: 0.0.0.0)
-- `FAUCET_SERVER_PORT`: Server port (default: 8080)
-- `FAUCET_DB_PATH`: Path to SQLite database file (default: /data/faucet.db)
-- `FAUCET_SOLANA_RPC_URL`: Solana RPC URL (default: https://api.testnet.solana.com)
-- `FAUCET_WALLET_PATH`: Path to wallet file (default: /data/wallet.json)
-- `RECAPTCHA_SECRET_KEY`: reCAPTCHA secret key
-- `RECAPTCHA_SITE_KEY`: reCAPTCHA site key
-- `CLOUDFLARE_TUNNEL_TOKEN`: Cloudflare Tunnel token (for production deployment)
+3. Access your faucet at your configured domain
 
 ## Security Considerations
 
-- In production, set proper reCAPTCHA keys
-- Secure your wallet private key
-- Consider running the faucet only on testnets
-- Adjust rate limits in config.json based on your needs
-- When using Cloudflare Tunnel, ensure proper authentication is set up if needed
+- The faucet uses Cloudflare Turnstile for bot protection
+- Rate limiting is implemented to prevent abuse
+- A cooldown period is enforced between requests
+- CORS is configured to allow only specific origins
+- The faucet wallet should be kept secure and have limited funds
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details. 

@@ -13,6 +13,7 @@ services:
       - FAUCET_DB_PATH=/app/data/faucet.db
       - FAUCET_SOLANA_RPC_URL=https://api.testnet.solana.com
       - FAUCET_WALLET_PATH=/app/data/wallet.json
+      - FAUCET_CORS_ALLOWED_ORIGINS=*
       - FAUCET_TURNSTILE_SECRET=${TURNSTILE_SECRET_KEY:-your-turnstile-secret-key}
       - FAUCET_TURNSTILE_SITE=${TURNSTILE_SITE_KEY:-your-turnstile-site-key}
       - FAUCET_RATE_LIMIT_REQUESTS=5
@@ -24,7 +25,6 @@ services:
     volumes:
       - faucet-data:/app/data
       - ./wallet/faucet-wallet.json:/app/data/wallet.json
-    # Expose directly to host for simple local testing
     ports:
       - "8080:8080"
     networks:
@@ -36,7 +36,6 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: solana-faucet-frontend
     restart: unless-stopped
-    # Expose directly to host for simple local testing
     ports:
       - "80:80"
     depends_on:

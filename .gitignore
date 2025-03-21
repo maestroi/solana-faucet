@@ -29,3 +29,4 @@ backend/wallet/faucet-keypair.json
 docker-compose.prod.yml
 wallet/
 deploy.sh
+frontend/nginx.conf

@@ -43,7 +43,7 @@ func NewServer(cfg *config.Config, database *db.Database) *Server {
 
 	// Set up CORS
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"}, // In production, restrict this to specific domains
+		AllowedOrigins:   cfg.CORS.AllowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		ExposedHeaders:   []string{"Link"},
@@ -84,7 +84,7 @@ func (s *Server) setupRoutes() {
 	s.router.Group(func(r chi.Router) {
 		// Apply CORS middleware
 		r.Use(cors.Handler(cors.Options{
-			AllowedOrigins:   []string{"*"},
+			AllowedOrigins:   s.config.CORS.AllowedOrigins,
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 			ExposedHeaders:   []string{"Link"},
@@ -122,4 +122,4 @@ func (s *Server) Shutdown() error {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
-} 
+}

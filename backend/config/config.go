@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config represents the application configuration
@@ -28,6 +29,9 @@ type Config struct {
 		RateLimitRequests  int
 		RateLimitDuration  int // in seconds
 		ClaimCooldown      int // in seconds
+	}
+	CORS struct {
+		AllowedOrigins []string
 	}
 }
 
@@ -55,6 +59,10 @@ func LoadConfig(_ string) (*Config, error) {
 	config.Security.RateLimitRequests = getEnvIntWithDefault("FAUCET_RATE_LIMIT_REQUESTS", 5)
 	config.Security.RateLimitDuration = getEnvIntWithDefault("FAUCET_RATE_LIMIT_DURATION", 60)
 	config.Security.ClaimCooldown = getEnvIntWithDefault("FAUCET_CLAIM_COOLDOWN", 86400)
+
+	// CORS config
+	allowedOrigins := getEnvWithDefault("FAUCET_CORS_ALLOWED_ORIGINS", "http://localhost:3000,https://https://solana-faucet.maestroi.cc/")
+	config.CORS.AllowedOrigins = strings.Split(allowedOrigins, ",")
 
 	return &config, nil
 }
