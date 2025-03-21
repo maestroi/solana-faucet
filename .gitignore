@@ -23,3 +23,9 @@ go.work.sum
 
 # env file
 .env
+
+# Solana wallet
+backend/wallet/faucet-keypair.json
+docker-compose.prod.yml
+wallet/
+deploy.sh
